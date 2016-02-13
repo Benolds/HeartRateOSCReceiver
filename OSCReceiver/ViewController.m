@@ -19,6 +19,7 @@
 @property (strong, nonatomic) F53OSCServer* oscServer;
 //@property (weak, nonatomic) IBOutlet UILabel *addressLabel;
 //@property (weak, nonatomic) IBOutlet UILabel *argumentsLabel;
+@property (strong, nonatomic) NSString* dataWritePath;
 
 @end
 
@@ -32,6 +33,10 @@
     [self.oscServer setPort:RECEIVEPORT];
     [self.oscServer setDelegate:self];
     [self.oscServer startListening];
+    
+    // create file for
+    self.dataWritePath = @"/Users/benreynolds/Documents/MakeMIT/HeartRateData/data.txt";
+    [[NSFileManager defaultManager] createFileAtPath:self.dataWritePath contents:nil attributes:nil];
     
 }
 
@@ -49,8 +54,21 @@
 
 -(void)takeMessage:(F53OSCMessage *)message {
     NSLog(@"Message Received");
-    NSLog(@"%@", message.addressPattern);
-    NSLog(@"%@", message.arguments.description);
+//    NSLog(@"%@", message.addressPattern);
+//    NSLog(@"%@", message.arguments.description);
+    if ([message.addressPattern isEqualToString:@"/heartrate"]) {
+        if (message.arguments.count > 0) {
+            int heartRate = [[message.arguments objectAtIndex:0] intValue];
+            NSLog(@"heartRate = %i", heartRate);
+            
+            NSString *writeString = [NSString stringWithFormat:@"%i,", heartRate];
+//            [writeString writeToFile:self.dataWritePath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+            
+            NSFileHandle *myHandle = [NSFileHandle fileHandleForWritingAtPath:self.dataWritePath];
+            [myHandle seekToEndOfFile];
+            [myHandle writeData:[writeString dataUsingEncoding:NSUTF8StringEncoding]];
+        }
+    }
 }
 
 @end
